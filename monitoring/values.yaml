@@ -15,7 +15,7 @@ kube-prometheus-stack:
       serviceMonitorSelectorNilUsesHelmValues: false
 
   alertmanager:
-    enabled: false
+    enabled: true
 
   grafana:
     enabled: false  
@@ -90,6 +90,19 @@ loki:
       enabled: true #Permite la eliminacion automatica del persistence volumen
       storageClassName: standard
       size: 5Gi
+
+  schemaConfig:
+    configs:
+      - from: "2024-01-01"
+        store: boltdb-shipper
+        object_store: s3
+        schema: v12
+        index:
+          prefix: loki_index_
+          period: 24h    
+  
+  rulerConfig:
+    alertmanager_url: http://localhost:9093        
   
   secrets:
     s3:

@@ -18,6 +18,11 @@ spec:
       name: loki-s3-credentials
       namespace: monitoring
 
+    - group: apps
+      kind: StatefulSet
+      name: observability-stack-loki-chunks-cache
+      namespace: monitoring
+
   syncPolicy:
     automated:
       prune: true
