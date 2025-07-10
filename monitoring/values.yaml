@@ -87,14 +87,16 @@ loki:
         ruler: loki-ruler
         admin: loki-admin
       s3:
-        bucketnames: bucketprueba-jh
-        region: us-east-1  # O tu región real
-        # access_key_id: AKIAXVLX3OTW6V5MCG7E
-        # secret_access_key: tAwOoae7h17SNf48L2TP3JjlrlgAwxZC
-        access_key_id: ""
-        secret_access_key: ""
-        s3forcepathstyle: false # when use s3
+        bucketNames:
+          chunks: loki-data
+          ruler: loki-ruler
+          admin: loki-admin
+        region: us-east-1
+        access_key_id: null
+        secret_access_key: null
+        s3forcepathstyle: false
         insecure: false
+
       
     commonConfig:
       replication_factor: 1  
@@ -116,7 +118,7 @@ loki:
             period: 24h    
   
   rulerConfig:
-    # alertmanager_url: http://localhost:9093   
+    alertmanager_url: http://observability-stack-kube-p-alertmanager.monitoring.svc.cluster.local:9093
     wal:
       dir: /var/loki/ruler-wal
        
