@@ -1,0 +1,20 @@
+piVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: observability-stack
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/Jhorman967/grafana.git
+    targetRevision: HEAD
+    path: .  # Ajusta si tu chart está en un subdirectorio
+  destination:
+    server: https://kubernetes.default.svc #internal name de kubernetes cluster service
+    namespace: monitoring
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

@@ -1,0 +1,159 @@
+##################################################
+###      Variables for the Prometheus          ###  
+##################################################
+kube-prometheus-stack:
+  prometheus:
+    prometheusSpec:
+      retention: 7d
+      storageSpec:
+        volumeClaimTemplate:
+          spec:
+            accessModes: ["ReadWriteOnce"]
+            resources:
+              requests:
+                storage: 5Gi
+      serviceMonitorSelectorNilUsesHelmValues: false
+
+  alertmanager:
+    enabled: false
+
+  grafana:
+    enabled: false  
+
+
+##################################################
+###         Variables for the Grafana          ###  
+##################################################
+grafana:
+  adminPassword: ""
+
+  datasources:
+    datasources.yaml:
+      apiVersion: 1
+      datasources:
+        - name: Loki
+          type: loki
+          access: proxy
+          url: http://loki-read:3100
+          isDefault: true
+        - name: Prometheus
+          type: prometheus
+          access: proxy
+          url: http://prometheus-operated.monitoring.svc.cluster.local:9090
+          editable: true  
+
+  persistence:
+    enabled: false
+    storageClassName: standard
+    size: 5Gi
+
+  service:
+    type: ClusterIP
+  
+  secrets:
+    s3:
+      name: grafana-admin
+      keys:
+        adminPassword: admin-password    
+
+
+  
+
+##################################################
+###         Variables for the loki             ###  
+##################################################
+
+loki:
+  # Deployment mode: SingleBinary (simple), SimpleScalable (medium), Distributed (large)
+  deploymentMode: SimpleScalable
+  loki:
+    auth_enabled: false
+    storage:
+      bucketNames:
+        chunks: loki-data
+        ruler: loki-ruler
+        admin: loki-admin
+      s3:
+        bucketnames: bucketprueba-jh
+        region: us-east-1  # O tu región real
+        # access_key_id: AKIAXVLX3OTW6V5MCG7E
+        # secret_access_key: tAwOoae7h17SNf48L2TP3JjlrlgAwxZC
+        access_key_id: ""
+        secret_access_key: ""
+        s3forcepathstyle: false # when use s3
+        insecure: false
+
+  secrets:
+    s3:
+      name: loki-s3-credentials
+      keys:
+        access_key_id: access_key_id
+        secret_access_key: secret_access_key
+
+
+
+    commonConfig:
+      replication_factor: 1  
+
+    useTestSchema: true
+    persistence:
+      enabled: true #Permite la eliminacion automatica del persistence volumen
+      storageClassName: standard
+      size: 5Gi
+
+  singleBinary:
+    replicas: 0
+
+  test:
+    enabled: false
+
+  # -- util para centralizar todo las conexion de no en sigle binary
+  gateway:
+    enabled: false
+  #componenete replica don't necesary for singleBinary
+  write:
+    replicas: 1
+    affinity:
+      podAntiAffinity: {}
+  read:
+    replicas: 1
+    affinity:
+      podAntiAffinity: {}
+  backend:
+    replicas: 1
+    affinity:
+      podAntiAffinity: {}
+
+
+
+##se debe modificar al subir a produccion para usar S32
+  # schemaConfig:
+  #   configs:
+  #     - from: "2024-01-01"
+  #       store: boltdb-shipper
+  #       object_store: s3
+  #       schema: v11
+  #       index:
+  #         prefix: index_
+  #         period: 24h
+
+  # storage:
+  #   type: s3
+
+
+
+##################################################
+###       Variables for the promtail           ###  
+##################################################
+
+promtail:
+  config:
+    clients:
+      - url: http://loki-write.monitoring.svc.cluster.local:3100/loki/api/v1/push
+
+
+    snippets:
+      pipelineStages:
+        - docker: {}
+        - cri: {}
+
