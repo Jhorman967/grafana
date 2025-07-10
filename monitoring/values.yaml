@@ -83,14 +83,10 @@ loki:
     auth_enabled: false
     storage:
       bucketNames:
-        chunks: loki-data
+        chunks: bucketprueba-jh
         ruler: loki-ruler
         admin: loki-admin
       s3:
-        bucketNames:
-          chunks: loki-data
-          ruler: loki-ruler
-          admin: loki-admin
         region: us-east-1
         access_key_id: AKIARLP5O743GCFN446L
         secret_access_key: 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
