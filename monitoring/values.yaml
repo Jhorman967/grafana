@@ -83,17 +83,6 @@ loki:
         s3forcepathstyle: false # when use s3
         insecure: false
       
-      useTestSchema: true
-
-  secrets:
-    s3:
-      name: loki-s3-credentials
-      keys:
-        access_key_id: access_key_id
-        secret_access_key: secret_access_key
-
-
-
     commonConfig:
       replication_factor: 1  
 
@@ -102,7 +91,14 @@ loki:
       enabled: true #Permite la eliminacion automatica del persistence volumen
       storageClassName: standard
       size: 5Gi
-
+  
+  secrets:
+    s3:
+      name: loki-s3-credentials
+      keys:
+        access_key_id: access_key_id
+        secret_access_key: secret_access_key
+  
   singleBinary:
     replicas: 0
 
