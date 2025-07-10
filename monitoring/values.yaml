@@ -124,12 +124,12 @@ loki:
       dir: /var/loki/ruler-wal
        
   
-  secrets:
-    s3:
-      name: loki-s3-credentials
-      keys:
-        access_key_id: access_key_id
-        secret_access_key: secret_access_key
+  # secrets:
+  #   s3:
+  #     name: loki-s3-credentials
+  #     keys:
+  #       access_key_id: access_key_id
+  #       secret_access_key: secret_access_key
   
   singleBinary:
     replicas: 0
