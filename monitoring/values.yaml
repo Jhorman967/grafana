@@ -92,9 +92,10 @@ loki:
           ruler: loki-ruler
           admin: loki-admin
         region: us-east-1
+        access_key_id: AKIARLP5O743GCFN446L
+        secret_access_key: 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
         s3forcepathstyle: false
         insecure: false
-
       
     commonConfig:
       replication_factor: 1  
@@ -107,7 +108,7 @@ loki:
 
     schemaConfig:
       configs:
-        - from: "2025-01-01"
+        - from: "2025-0-01"
           store: tsdb
           object_store: s3
           schema: v13
