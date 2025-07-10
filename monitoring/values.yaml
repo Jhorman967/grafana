@@ -28,6 +28,8 @@ grafana:
   admin:
     existingSecret: grafana-admin
     passwordKey: admin-password
+    userKey: admin-user
+
 
   datasources:
     datasources.yaml:
