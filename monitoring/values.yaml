@@ -82,6 +82,8 @@ loki:
         secret_access_key: ""
         s3forcepathstyle: false # when use s3
         insecure: false
+      
+      useTestSchema: true
 
   secrets:
     s3:
