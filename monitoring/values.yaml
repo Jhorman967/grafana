@@ -16,6 +16,20 @@ kube-prometheus-stack:
 
   alertmanager:
     enabled: true
+    config:
+      global:
+        resolve_timeout: 5m
+      route:
+        group_by: ['alertname']
+        group_wait: 10s
+        group_interval: 5m
+        repeat_interval: 3h
+        receiver: 'msteams'
+      receivers:
+        - name: 'msteams'
+          webhook_configs:
+            - url: 'https://mdcloudps.webhook.office.com/webhookb2/36374362-6fb7-4875-88c3-5465a33288e0@33d2928a-e889-4d75-8b16-ff1cb54ae031/IncomingWebhook/a5297bf0b33e49bdb173f7fc1a2542f4/afd3765f-3b39-4b18-b114-51b0a684804e/V2xbmy1TCXU4NfUqh6NDqp4myKzJc6QRb2nj7rSNN8lLY1'
+              send_resolved: true
 
   grafana:
     enabled: false  
@@ -85,7 +99,7 @@ loki:
     commonConfig:
       replication_factor: 1  
 
-    useTestSchema: true
+    useTestSchema: false
     persistence:
       enabled: true #Permite la eliminacion automatica del persistence volumen
       storageClassName: standard
