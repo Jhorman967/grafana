@@ -25,7 +25,9 @@ kube-prometheus-stack:
 ###         Variables for the Grafana          ###  
 ##################################################
 grafana:
-  adminPassword: ""
+  admin:
+    existingSecret: grafana-admin
+    passwordKey: admin-password
 
   datasources:
     datasources.yaml:
@@ -48,13 +50,8 @@ grafana:
     size: 5Gi
 
   service:
-    type: ClusterIP
+    type: NodePort
   
-  secrets:
-    s3:
-      name: grafana-admin
-      keys:
-        adminPassword: admin-password    
 
 
   

@@ -12,6 +12,12 @@ spec:
   destination:
     server: https://kubernetes.default.svc #internal name de kubernetes cluster service
     namespace: monitoring
+  ignoreDifferences:
+    - group: ""
+      kind: Secret
+      name: loki-s3-credentials
+      namespace: monitoring
+
   syncPolicy:
     automated:
       prune: true
