@@ -319,7 +319,7 @@ centrifugo:
     adminPassword: "adminpass"
 
     # Admin secret used to create auth tokens on user login into admin web interface.
-    adminSecret: ""
+    adminSecret: "adminpass"
 
     # Centrifugo api_key for Centrifugo API endpoint authorization.
     apiKey: ""
