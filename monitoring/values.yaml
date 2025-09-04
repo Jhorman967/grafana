@@ -12,6 +12,27 @@ kube-prometheus-stack:
             resources:
               requests:
                 storage: 5Gi
+
+      additionalScrapeConfigs:
+        - job_name: kubernetes-nodes-cadvisor
+          scrape_interval: 10s
+          scrape_timeout: 10s
+          scheme: https
+          tls_config:
+            ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+          bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+          kubernetes_sd_configs:
+            - role: node
+          relabel_configs:
+            - action: labelmap
+              regex: __meta_kubernetes_node_label_(.+)
+            - target_label: __address__
+              replacement: kubernetes.default.svc:443
+            - source_labels: [__meta_kubernetes_node_name]
+              regex: (.+)
+              target_label: __metrics_path__
+              replacement: /api/v1/nodes/${1}/proxy/metrics/cadvisor
+
       serviceMonitorSelectorNilUsesHelmValues: false
 
   alertmanager:
@@ -33,6 +54,14 @@ kube-prometheus-stack:
 
   grafana:
     enabled: false  
+
+  groups:
+  - name: compatibility-rules
+    rules:
+    - record: container_cpu_usage_seconds_total
+      expr: container_cpu_usage_seconds_total{job="kubelet", metrics_path="/metrics/cadvisor"}
+      labels:
+        job: kubernetes-nodes-cadvisor  
 
 
 ##################################################
@@ -68,105 +97,178 @@ grafana:
   service:
     type: NodePort
   
+  # dashboards:
+  #   enabled: true
+  #   labelValue: "1"
+  # sidecar:
 
+  sidecar:
+    dashboards:
+      enabled: true
+      label: grafana_dashboard
+      labelValue: "1"
 
+    dashboardsConfigMaps:
+      - grafana-dashboard-k8s
+    # dashboards:
+    #   default:
+    #     k8s-cluster:
+    #       file: /var/lib/grafana/dashboards/k8s-cluster-overview.json
+
+    # dashboardProviders:
+    #   dashboardproviders.yaml:
+    #     apiVersion: 1
+    #     providers:
+    #       - name: 'default'
+    #         orgId: 1
+    #         folder: ''
+    #         type: file
+    #         disableDeletion: false
+    #         editable: true
+    #         options:
+    #           path: /var/lib/grafana/dashboards      
+
+    # extraVolumeMounts:
+    #   - name: dashboards
+    #     mountPath: /var/lib/grafana/dashboards
+  
+    # extraVolumes:
+    #   - name: dashboards
+    #     configMap:
+    #       name: grafana-dashboard-k8s
   
 
 ##################################################
 ###         Variables for the loki             ###  
 ##################################################
-
 loki:
-  # Deployment mode: SingleBinary (simple), SimpleScalable (medium), Distributed (large)
+  fullnameOverride: loki
   deploymentMode: SimpleScalable
+  tableManager:
+    # Fuerza el envío de los bloques de índice cada 5 minutos
+    sync_period: 1m
+    retention_deletes_enabled: true
+    retention_period: 168h
   loki:
     auth_enabled: false
+
+    commonConfig:
+      replication_factor: 1
+
     storage:
       bucketNames:
         chunks: bucketprueba-jh
-        ruler: loki-ruler
-        admin: loki-admin
+        ruler: bucketprueba-jh
+        admin: bucketprueba-jh
       s3:
         region: us-east-1
-        access_key_id: AKIARLP5O743HTPL4BGL
-        secret_access_key: 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
-        s3forcepathstyle: false
-        insecure: false
-      
-    commonConfig:
-      replication_factor: 1  
+        s3forcepathstyle: true
+        insecure: false  
 
-    useTestSchema: false
-    persistence:
-      enabled: true #Permite la eliminacion automatica del persistence volumen
-      storageClassName: standard
-      size: 5Gi
+    storageConfig:
+      tsdb_shipper:
+        active_index_directory: /data/loki/index
+        cache_location: /data/loki/cache
+        shared_store: s3
+      aws:
+        bucketnames:
+          chunks: bucketprueba-jh
+          ruler: bucketprueba-jh
+          admin: bucketprueba-jh
+        region: us-east-1
+        s3forcepathstyle: true
+        insecure: false
 
     schemaConfig:
       configs:
-        - from: "2025-04-01"
+        - from: "2024-01-01"
           store: tsdb
           object_store: s3
           schema: v13
           index:
-            prefix: loki_index_
+            prefix: index_
             period: 24h
 
+    # persistence:
+    #   enabled: true
+    #   storageClassName: standard
+    #   size: 5Gi
 
-  
+  memberlistConfig:
+    bind_port: 7946
+
+  write:
+    replicas: 1
+    extraEnv:
+      - name: AWS_ACCESS_KEY_ID
+        valueFrom:
+          secretKeyRef:
+            name: loki-s3-credentials
+            key: access_key_id
+      - name: AWS_SECRET_ACCESS_KEY
+        valueFrom:
+          secretKeyRef:
+            name: loki-s3-credentials
+            key: secret_access_key
+  read:
+    replicas: 1
+    extraEnv:
+      - name: AWS_ACCESS_KEY_ID
+        valueFrom:
+          secretKeyRef:
+            name: loki-s3-credentials
+            key: access_key_id
+      - name: AWS_SECRET_ACCESS_KEY
+        valueFrom:
+          secretKeyRef:
+            name: loki-s3-credentials
+            key: secret_access_key
+  backend:
+    replicas: 1
+    extraEnv:
+      - name: AWS_ACCESS_KEY_ID
+        valueFrom:
+          secretKeyRef:
+            name: loki-s3-credentials
+            key: access_key_id
+      - name: AWS_SECRET_ACCESS_KEY
+        valueFrom:
+          secretKeyRef:
+            name: loki-s3-credentials
+            key: secret_access_key
+  ruler:
+    extraEnv:
+      - name: AWS_ACCESS_KEY_ID
+        valueFrom:
+          secretKeyRef:
+            name: loki-s3-credentials
+            key: AWS_ACCESS_KEY_ID
+      - name: AWS_SECRET_ACCESS_KEY
+        valueFrom:
+          secretKeyRef:
+            name: loki-s3-credentials
+            key: AWS_SECRET_ACCESS_KEY         
+
+  limits_config:
+    allow_structured_metadata: true
+    retention_period: 168h
+
   rulerConfig:
     alertmanager_url: http://observability-stack-kube-p-alertmanager.monitoring.svc.cluster.local:9093
     wal:
       dir: /var/loki/ruler-wal
-       
-  
-  # secrets:
-  #   s3:
-  #     name: loki-s3-credentials
-  #     keys:
-  #       access_key_id: access_key_id
-  #       secret_access_key: secret_access_key
-  
-  singleBinary:
-    replicas: 0
 
-  test:
-    enabled: false
-
-  # -- util para centralizar todo las conexion de no en sigle binary
   gateway:
     enabled: false
-  #componenete replica don't necesary for singleBinary
-  write:
-    replicas: 1
-    affinity:
-      podAntiAffinity: {}
-  read:
-    replicas: 1
-    affinity:
-      podAntiAffinity: {}
-  backend:
-    replicas: 1
-    affinity:
-      podAntiAffinity: {}
+  singleBinary:
+    replicas: 0
+  test:
+    enabled: false
+  chunksCache:
+    enabled: false
+  resultsCache:
+    enabled: false
 
-
-  limits_config:
-    allow_structured_metadata: true
-
-##se debe modificar al subir a produccion para usar S32
-  # schemaConfig:
-  #   configs:
-  #     - from: "2024-01-01"
-  #       store: boltdb-shipper
-  #       object_store: s3
-  #       schema: v11
-  #       index:
-  #         prefix: index_
-  #         period: 24h
-
-  # storage:
-  #   type: s3
 
 
 
@@ -174,14 +276,51 @@ loki:
 ###       Variables for the promtail           ###  
 ##################################################
 
+# promtail:
+#   config:
+#     clients:
+#       - url: http://loki-write.monitoring.svc.cluster.local:3100/loki/api/v1/push
+
+
+#     snippets:
+#       pipelineStages:
+#         - docker: {}
+#         - cri: {}
+
 promtail:
   config:
     clients:
       - url: http://loki-write.monitoring.svc.cluster.local:3100/loki/api/v1/push
 
+    scrape_configs:
+      - job_name: kubernetes-pods
+        # Descubre todos los pods en todos los namespaces
+        kubernetes_sd_configs:
+          - role: pod
 
-    snippets:
-      pipelineStages:
-        - docker: {}
-        - cri: {}
+        pipeline_stages:
+          - cri: {}
+          # Opcional: quita labels que no quieras llevar
+          - labeldrop:
+              - filename
+              - job
+          - labelallow:
+              - namespace
+              - pod
+              - container
 
+        relabel_configs:
+          # 1) Excluir TODO pod cuyo nombre empiece por "loki-"
+          - source_labels: [__meta_kubernetes_pod_name]
+            regex: loki-.*
+            action: drop
+
+          # 2) (Opcional) Excluir cualquier pod en el namespace monitoring que empiece por "loki"
+          - source_labels: [__meta_kubernetes_namespace, __meta_kubernetes_pod_name]
+            regex: monitoring;(loki-.*)
+            action: drop
+
+          # 3) Mantener sólo pods etiquetados con "app" (o ajusta a tus etiquetas de aplicación)
+          - source_labels: [__meta_kubernetes_labels_app]
+            regex: .+
+            action: keep
