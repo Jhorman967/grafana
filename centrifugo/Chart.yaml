@@ -1,0 +1,12 @@
+ 
+apiVersion: v2
+name: centrifugo-chart
+description: Centralized observability stack with Prometheus, Loki, Grafana and Promtail
+type: application
+version: 1.0.0
+appVersion: "1.0"
+
+dependencies:
+  - name: centrifugo
+    version: 12.3.7
+    repository: https://centrifugal.github.io/helm-charts

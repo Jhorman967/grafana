@@ -1,0 +1,8 @@
+#this all @parametes for centrifugo
+
+centrifugo:
+  secrets:
+    tokenHmacSecretKey: "supersecreto-123"
+    apiKey: "mi-api-key"
+    adminPassword: "adminpass"
+    adminSecret: "adminsecret"
